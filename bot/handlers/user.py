@@ -18,6 +18,9 @@ subtype_callback = CallbackData("subtype", "id_subtype", "id_HI")
 HIs_callback = CallbackData("HIs", "id_city")
 programs_callback = CallbackData("programs", "id_HI")
 
+go_callback = CallbackData("go", "type", "ids")
+back_callback = CallbackData("back", "type", "ids")
+
 
 @dp.message_handler(commands=["start"])
 async def start(message: Message):
@@ -63,11 +66,11 @@ async def types(message: Message, id_HI=0):
 
     result = edu_sql.select("Type", "Type.id > 0")
     for type in result:
-        callback = type_callback.new(id_type=id, id_HI=id_HI)
+        callback = type_callback.new(id_type=type.id, id_HI=id_HI)
         button = InlineKeyboardButton(text=type.name, callback_data=callback)
         keyboard.add(button)
 
-    if id_HI is None:
+    if id_HI == 0:
         await message.answer(
             general.search_types_0, parse_mode="html", reply_markup=keyboard
         )
@@ -85,7 +88,9 @@ async def dialog(message: Message):
     user_session = users_sql.select(message.chat.id).session
 
     if user_session == "search_city":
-        result = edu_sql.select("City", f"City.keywords.like('%{message.text}%')")
+        result = edu_sql.select(
+            "City", f"City.keywords.like('%{message.text.lower()}%')"
+        )
 
         if result == []:
             await message.answer(general.search_not_found_mes)
@@ -100,10 +105,11 @@ async def dialog(message: Message):
                 await message.answer(
                     general.search_found_city_mes.format(city.name, city.subject),
                     reply_markup=keyboard,
+                    parse_mode="html",
                 )
 
     elif user_session == "search_HI":
-        result = edu_sql.select("HI", f"HI.keywords.like('%{message.text}%')")
+        result = edu_sql.select("HI", f"HI.keywords.like('%{message.text.lower()}%')")
 
         if result == []:
             await message.answer(general.search_not_found_mes)
@@ -122,10 +128,13 @@ async def dialog(message: Message):
                 await message.answer(
                     general.search_found_HI_mes.format(HI.name, city_name),
                     reply_markup=keyboard,
+                    parse_mode="html",
                 )
 
     elif user_session == "search_program":
-        result = edu_sql.select("Program", f"Program.keywords.like('%{message.text}%')")
+        result = edu_sql.select(
+            "Program", f"Program.keywords.like('%{message.text.lower()}%')"
+        )
 
         if result == []:
             await message.answer(general.search_not_found_mes)
@@ -147,6 +156,7 @@ async def dialog(message: Message):
                 await message.answer(
                     general.search_found_program_mes.format(program_name, HI_name),
                     reply_markup=keyboard,
+                    parse_mode="html",
                 )
 
     else:
@@ -244,7 +254,48 @@ async def query_cb(call: CallbackQuery):
         pass
 
     elif prefix == "type":
-        pass
+        result = edu_sql.select("Subtype", f"Subtype.id_type == {int(args[0])}")
+
+        keyboard = InlineKeyboardMarkup(row_width=1)
+        for subtype in result:
+            callback = subtype_callback.new(id_subtype=subtype.id, id_HI=int(args[1]))
+            button = InlineKeyboardButton(text=subtype.name, callback_data=callback)
+            keyboard.add(button)
+
+        await bot.edit_message_reply_markup(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            reply_markup=keyboard,
+        )
 
     elif prefix == "subtype":
+        result = edu_sql.select("Program", f"Program.id_subtype == {int(args[0])}")
+
+        if result == []:
+            await bot.send_message(call.message.chat.id, general.search_not_found_mes)
+        else:
+            keyboard = InlineKeyboardMarkup(row_width=1)
+            for program in result:
+                callback = program_callback.new(id_program=program.id)
+
+                HI_name = edu_sql.select("HI", f"HI.id == {program.id_HI}", "one").name
+                program_name = edu_sql.select(
+                    "ProgramCode", f"ProgramCode.code == '{program.code}'", "one"
+                ).name
+                button = InlineKeyboardButton(
+                    text=general.search_found_program_mes.format(program_name, HI_name),
+                    callback_data=callback,
+                )
+                keyboard.add(button)
+
+            await bot.edit_message_reply_markup(
+                chat_id=call.message.chat.id,
+                message_id=call.message.message_id,
+                reply_markup=keyboard,
+            )
+
+    elif prefix == "go":
+        pass
+
+    elif prefix == "back":
         pass

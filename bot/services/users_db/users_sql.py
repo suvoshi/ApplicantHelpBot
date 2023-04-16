@@ -12,8 +12,8 @@ users_engine = create_engine(f"sqlite:///{USERS_DATABASE}")
 users_session = Session(users_engine)
 
 
-def select(id_chat):
-    """Returns Chat model"""
+def select(id_chat: int):
+    """Returns Chat object with given id_chat"""
     request = db_select(Chat).where(Chat.id_chat == id_chat)
     result = users_session.scalars(request).all()
 
@@ -23,15 +23,15 @@ def select(id_chat):
         return []
 
 
-def insert(id_chat, session):
-    """Insert values into table"""
+def insert(id_chat: int, session: str):
+    """Insert id_chat, session into Chat table"""
     request = db_insert(Chat).values(id_chat=id_chat, session=session)
     users_session.execute(request)
     users_session.commit()
 
 
-def update(id_chat, session):
-    """Updates values in table"""
+def update(id_chat: int, session: str):
+    """Update session Chat object with given id_chat"""
     request = db_update(Chat).where(Chat.id_chat == id_chat).values(session=session)
     users_session.execute(request)
     users_session.commit()

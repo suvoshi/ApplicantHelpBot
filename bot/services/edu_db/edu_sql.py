@@ -9,7 +9,7 @@ edu_engine = create_engine(f"sqlite:///{EDU_DATABASE}")
 edu_session = Session(edu_engine)
 
 
-def select(table, condition, quantity="all"):
+def select(table: str, condition: str, quantity="all"):
     """Returns list or model based on quantity param"""
 
     request = db_select(eval(table)).where(eval(condition))

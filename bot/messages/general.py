@@ -48,61 +48,61 @@ search_HI_mes = """Хорошо, напишите название ВУЗа"""
 search_program_mes = """Хорошо, напишите название направления"""
 
 search_types_0 = f"""<b>{emoji['program']} Направления подготовки{emoji['desc']}</b>"""
-search_types = """<b>{emoji['HI']} ВУЗ:</b> {}\n<b>{emoji['program']} Направления подготовки{emoji['desc']}</b>"""
+search_types = f"""<b>{emoji['HI']} ВУЗ:</b> {{}}\n<b>{emoji['program']} Направления подготовки{emoji['desc']}</b>"""
 
-search_HIs_mes = """{emoji['city']} <b>Город:</b> {}\n<b>{emoji['HI']} Университеты{emoji['desc']}</b>"""
+search_HIs_mes = f"""{emoji['city']} <b>Город:</b> {{}}\n<b>{emoji['HI']} Университеты{emoji['desc']}</b>"""
 
 search_found_city_mes = (
-    """<b>{emoji['city']} Город:</b> {}\n<b>{emoji['subj']} Субъект:</b> {}"""
+    f"""<b>{emoji['city']} Город:</b> {{}}\n<b>{emoji['subj']} Субъект:</b> {{}}"""
 )
 search_found_HI_mes = (
-    """<b>{emoji['HI']} Название:</b> {}\n<b>{emoji['city']} Город:</b> {}"""
+    f"""<b>{emoji['HI']} Название:</b> {{}}\n<b>{emoji['city']} Город:</b> {{}}"""
 )
 search_found_program_mes = (
-    """<b>{emoji['program']} Название:</b> {}\n<b>{emoji['HI']} ВУЗ:</b> {}"""
+    f"""<b>{emoji['program']} Название:</b> {{}}\n<b>{emoji['HI']} ВУЗ:</b> {{}}"""
 )
 
 # answer messages (which are working with db)
-city_mes = """
-{emoji['city']} <b>Город:</b> {}
-{emoji['subj']} <b>Субъект:</b> {}
+city_mes = f"""
+{emoji['city']} <b>Город:</b> {{}}
+{emoji['subj']} <b>Субъект:</b> {{}}
 
 <b>Описание города {emoji['desc']}</b>
-{}
+{{}}
 """
 
-HI_mes = """
-{emoji['HI']} <b>Название:</b> {}
-{emoji['city']} <b>Город:</b> {}
+HI_mes = f"""
+{emoji['HI']} <b>Название:</b> {{}}
+{emoji['city']} <b>Город:</b> {{}}
 
 <b>Описание ВУЗа {emoji['desc']}</b>
-{}
+{{}}
 """
 
-program_mes = """
-{emoji['program']} <b>Название:</b> {}
-{emoji['HI']} <b>Университет:</b> {}
+program_mes = f"""
+{emoji['program']} <b>Название:</b> {{}}
+{emoji['HI']} <b>Университет:</b> {{}}
 
 <b>Описание направления {emoji['desc']}</b>
-{}
+{{}}
 
-<b>Профили обучения:</b> {}
+<b>Профили обучения:</b> {{}}
 
 <b>Предметы для сдачи:</b>
-{}
+{{}}
 
-<b>Форма обучения:</b> {}
+<b>Форма обучения:</b> {{}}
 
-<b>Бюджетные места:</b> {}
+<b>Бюджетные места:</b> {{}}
 
-<b>Стоимость обучения:</b> {}
+<b>Стоимость обучения:</b> {{}}
 
-<b>Время обучения:</b> {}
+<b>Время обучения:</b> {{}}
 
-*Данные за {} год.
+*Данные за {{}} год.
 """
 
-HIs_mes = """"""
+HIs_mes = f""""""
 
 # other
 miss_mes = """Простите, не понимаю вас."""
