@@ -9,17 +9,12 @@ from bot.services.edu_db import edu_sql
 from bot.services.users_db import users_sql
 
 # set CallbackData for all types
-city_callback = CallbackData("city", "id_city")
-HI_callback = CallbackData("HI", "id_HI")
-program_callback = CallbackData("program", "id_program")
-type_callback = CallbackData("type", "id_type", "id_HI")
-subtype_callback = CallbackData("subtype", "id_subtype", "id_HI")
+city_callback = CallbackData("city", "id_city", "del_before", "del_after")
+HI_callback = CallbackData("HI", "id_HI", "del_before", "del_after")
+program_callback = CallbackData("program", "id_program", "del_before", "del_after")
 
 HIs_callback = CallbackData("HIs", "id_city")
 programs_callback = CallbackData("programs", "id_HI")
-
-go_callback = CallbackData("go", "type", "ids")
-back_callback = CallbackData("back", "type", "ids")
 
 
 @dp.message_handler(commands=["start"])
@@ -46,7 +41,7 @@ async def search_city(message: Message):
     await message.answer(general.search_city_mes)
 
 
-@dp.message_handler(commands=["search_HI"])
+@dp.message_handler(commands=["search_hi"])
 async def search_HI(message: Message):
     users_sql.update(message.chat.id, "search_HI")
 
@@ -58,29 +53,6 @@ async def search_program(message: Message):
     users_sql.update(message.chat.id, "search_program")
 
     await message.answer(general.search_program_mes)
-
-
-@dp.message_handler(commands=["types"])
-async def types(message: Message, id_HI=0):
-    keyboard = InlineKeyboardMarkup(row_width=1)
-
-    result = edu_sql.select("Type", "Type.id > 0")
-    for type in result:
-        callback = type_callback.new(id_type=type.id, id_HI=id_HI)
-        button = InlineKeyboardButton(text=type.name, callback_data=callback)
-        keyboard.add(button)
-
-    if id_HI == 0:
-        await message.answer(
-            general.search_types_0, parse_mode="html", reply_markup=keyboard
-        )
-    else:
-        HI_name = edu_sql.select("HI", f"HI.id == {id_HI}")
-        await message.answer(
-            general.search_types.format(HI_name),
-            parse_mode="html",
-            reply_markup=keyboard,
-        )
 
 
 @dp.message_handler()
@@ -95,18 +67,25 @@ async def dialog(message: Message):
         if result == []:
             await message.answer(general.search_not_found_mes)
         else:
-            await message.answer(general.search_found_mes)
-            for city in result:
-                callback = city_callback.new(id_city=city.id)
-                button = InlineKeyboardButton(text="К городу", callback_data=callback)
-                keyboard = InlineKeyboardMarkup()
-                keyboard.add(button)
+            if len(result) > 5:
+                await message.answer(general.search_very_long_ans_mes)
+            else:
+                await message.answer(general.search_found_mes)
 
-                await message.answer(
-                    general.search_found_city_mes.format(city.name, city.subject),
-                    reply_markup=keyboard,
-                    parse_mode="html",
-                )
+                ind = 0
+                for city in result:
+                    callback = city_callback.new(id_city=city.id, del_before=(ind + 1), del_after=(len(result[ind + 1:])))
+                    button = InlineKeyboardButton(text="К городу", callback_data=callback)
+                    keyboard = InlineKeyboardMarkup()
+                    keyboard.add(button)
+
+                    await message.answer(
+                        general.search_found_city_mes.format(city.name, city.subject),
+                        reply_markup=keyboard,
+                        parse_mode="html",
+                    )
+
+                    ind += 1
 
     elif user_session == "search_HI":
         result = edu_sql.select("HI", f"HI.keywords.like('%{message.text.lower()}%')")
@@ -114,22 +93,29 @@ async def dialog(message: Message):
         if result == []:
             await message.answer(general.search_not_found_mes)
         else:
-            await message.answer(general.search_found_mes)
-            for HI in result:
-                city_name = edu_sql.select(
-                    "City", f"City.id == {HI.id_city}", "one"
-                ).name
+            if len(result) > 5:
+                await message.answer(general.search_very_long_ans_mes)
+            else:
+                await message.answer(general.search_found_mes)
 
-                callback = HI_callback.new(id_HI=id)
-                button = InlineKeyboardButton(text="К ВУЗу", callback_data=callback)
-                keyboard = InlineKeyboardMarkup()
-                keyboard.add(button)
+                ind = 0
+                for HI in result:
+                    city_name = edu_sql.select(
+                        "City", f"City.id == {HI.id_city}", "one"
+                    ).name
 
-                await message.answer(
-                    general.search_found_HI_mes.format(HI.name, city_name),
-                    reply_markup=keyboard,
-                    parse_mode="html",
-                )
+                    callback = HI_callback.new(id_HI=HI.id, del_before=(ind + 1), del_after=(len(result[ind + 1:])))
+                    button = InlineKeyboardButton(text="К вузу", callback_data=callback)
+                    keyboard = InlineKeyboardMarkup()
+                    keyboard.add(button)
+
+                    await message.answer(
+                        general.search_found_HI_mes.format(HI.name, city_name),
+                        reply_markup=keyboard,
+                        parse_mode="html",
+                    )
+
+                    ind += 1
 
     elif user_session == "search_program":
         result = edu_sql.select(
@@ -139,25 +125,32 @@ async def dialog(message: Message):
         if result == []:
             await message.answer(general.search_not_found_mes)
         else:
-            await message.answer(general.search_found_mes)
-            for program in result:
-                HI_name = edu_sql.select("HI", f"HI.id == {program.id_HI}", "one").name
-                program_name = edu_sql.select(
-                    "ProgramCode", f"ProgramCode.code == {program.code}", "one"
-                ).name
+            if len(result) > 5:
+                await message.answer(general.search_very_long_ans_mes)
+            else:
+                await message.answer(general.search_found_mes)
 
-                callback = program_callback.new(id_program=program.id)
-                button = InlineKeyboardButton(
-                    text="К направлению", callback_data=callback
-                )
-                keyboard = InlineKeyboardMarkup()
-                keyboard.add(button)
+                ind = 0
+                for program in result:
+                    HI_name = edu_sql.select("HI", f"HI.id == {program.id_HI}", "one").name
+                    program_name = edu_sql.select(
+                        "ProgramCode", f"ProgramCode.code == {program.code}", "one"
+                    ).name
 
-                await message.answer(
-                    general.search_found_program_mes.format(program_name, HI_name),
-                    reply_markup=keyboard,
-                    parse_mode="html",
-                )
+                    callback = program_callback.new(id_program=program.id, del_before=(ind + 1), del_after=(len(result[ind + 1:])))
+                    button = InlineKeyboardButton(
+                        text="К направлению", callback_data=callback
+                    )
+                    keyboard = InlineKeyboardMarkup()
+                    keyboard.add(button)
+
+                    await message.answer(
+                        general.search_found_program_mes.format(program_name, HI_name),
+                        reply_markup=keyboard,
+                        parse_mode="html",
+                    )
+
+                    ind += 1
 
     else:
         await message.answer(general.miss_mes)
@@ -173,6 +166,12 @@ async def query_cb(call: CallbackQuery):
     args = receive_data[1:]
 
     if prefix == "city":
+        del_bef = (-1) * int(args[1])
+        del_aft = int(args[2])
+
+        for i in range(del_bef, del_aft + 1):
+            await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id + i))
+        
         city = edu_sql.select("City", f"City.id == {int(args[0])}", "one")
 
         callback = HIs_callback.new(id_city=city.id)
@@ -180,7 +179,7 @@ async def query_cb(call: CallbackQuery):
             text="Посмотреть на карте",
             url="https://www.google.com/maps/place/" + city.name + " " + city.subject,
         )
-        button2 = InlineKeyboardButton(text="Университеты", callback_data=callback)
+        button2 = InlineKeyboardButton(text="Вузы", callback_data=callback)
 
         keyboard = InlineKeyboardMarkup(row_width=1)
         keyboard.add(button1, button2)
@@ -193,41 +192,58 @@ async def query_cb(call: CallbackQuery):
         )
 
     elif prefix == "HI":
+        del_bef = (-1) * int(args[1])
+        del_aft = int(args[2])
+
+        for i in range(del_bef, del_aft + 1):
+            await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id + i))
+        
         HI = edu_sql.select("HI", f"HI.id == {int(args[0])}", "one")
 
-        city_name = edu_sql.select("HI", f"HI.id == {int(args[0])}", "one").name
+        city = edu_sql.select("City", f"City.id == {HI.id_city}", "one")
 
-        callback = programs_callback.new(id_HI=HI.id)
+        callback3 = programs_callback.new(id_HI=HI.id)
+        callback4 = city_callback.new(id_city=city.id, del_before=0, del_after=0)
         button1 = InlineKeyboardButton(
             text="Посмотреть на карте",
             url="https://www.google.com/maps/place/" + HI.name,
         )
         button2 = InlineKeyboardButton(text="Сайт", url=HI.url)
-        button3 = InlineKeyboardButton(text="Направления", callback_data=callback)
+        button3 = InlineKeyboardButton(text="Направления", callback_data=callback3)
+        button4 = InlineKeyboardButton(text="⬅️ К городу", callback_data=callback4)
 
         keyboard = InlineKeyboardMarkup(row_width=1)
-        keyboard.add(button1, button2, button3)
+        keyboard.add(button1, button2, button3, button4)
 
         await bot.send_message(
             call.message.chat.id,
-            general.HI_mes.format(HI.name, city_name, HI.info),
+            general.HI_mes.format(HI.name, city.name, HI.info),
             parse_mode="html",
             reply_markup=keyboard,
         )
 
     elif prefix == "program":
+        del_bef = (-1) * int(args[1])
+        del_aft = int(args[2])
+
+        for i in range(del_bef, del_aft + 1):
+            await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id + i))
+        
         program = edu_sql.select("Program", f"Program.id == {int(args[0])}", "one")
 
         HI_name = edu_sql.select("HI", f"HI.id == {program.id_HI}", "one").name
 
         program_name = edu_sql.select(
-            "ProgramCode", f"ProgramCode.code == {program.code}", "one"
+            "ProgramCode", f"ProgramCode.code == '{program.code}'", "one"
         ).name
 
-        button = InlineKeyboardButton(text="Подробнее", url=program.url)
+        callback2 = HI_callback.new(id_HI=program.id_HI, del_before=0, del_after=0)
+
+        button1 = InlineKeyboardButton(text="Подробнее", url=program.url)
+        button2 = InlineKeyboardButton(text="⬅️ К вузу", callback_data=callback2)
 
         keyboard = InlineKeyboardMarkup()
-        keyboard.add(button)
+        keyboard.add(button1, button2)
 
         await bot.send_message(
             call.message.chat.id,
@@ -239,7 +255,7 @@ async def query_cb(call: CallbackQuery):
                 program.objs,
                 program.form,
                 program.budget_places,
-                program.ed_cost,
+                program.cost_ed,
                 program.period,
                 program.last_update,
             ),
@@ -248,54 +264,71 @@ async def query_cb(call: CallbackQuery):
         )
 
     elif prefix == "HIs":
-        pass
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
 
-    elif prefix == "programs":
-        pass
+        city = edu_sql.select("City", f"City.id == {int(args[0])}", "one")
 
-    elif prefix == "type":
-        result = edu_sql.select("Subtype", f"Subtype.id_type == {int(args[0])}")
+        result = edu_sql.select("HI", f"HI.id_city == {city.id}")
 
-        keyboard = InlineKeyboardMarkup(row_width=1)
-        for subtype in result:
-            callback = subtype_callback.new(id_subtype=subtype.id, id_HI=int(args[1]))
-            button = InlineKeyboardButton(text=subtype.name, callback_data=callback)
+        await bot.send_message(call.message.chat.id, general.HIs_mes.format(city.name), parse_mode="html")
+        
+        if result == []:
+            callback = city_callback.new(id_city=city.id, del_before=1, del_after=0)
+            button = InlineKeyboardButton("⬅️ К городу", callback_data=callback)
+            keyboard = InlineKeyboardMarkup()
             keyboard.add(button)
 
-        await bot.edit_message_reply_markup(
-            chat_id=call.message.chat.id,
-            message_id=call.message.message_id,
-            reply_markup=keyboard,
-        )
-
-    elif prefix == "subtype":
-        result = edu_sql.select("Program", f"Program.id_subtype == {int(args[0])}")
-
-        if result == []:
-            await bot.send_message(call.message.chat.id, general.search_not_found_mes)
+            await bot.send_message(call.message.chat.id, general.search_HIs_not_found_mes, reply_markup=keyboard)
         else:
-            keyboard = InlineKeyboardMarkup(row_width=1)
-            for program in result:
-                callback = program_callback.new(id_program=program.id)
-
-                HI_name = edu_sql.select("HI", f"HI.id == {program.id_HI}", "one").name
-                program_name = edu_sql.select(
-                    "ProgramCode", f"ProgramCode.code == '{program.code}'", "one"
-                ).name
-                button = InlineKeyboardButton(
-                    text=general.search_found_program_mes.format(program_name, HI_name),
-                    callback_data=callback,
-                )
+            ind = 0
+            for HI in result:
+                keyboard = InlineKeyboardMarkup()
+                callback = HI_callback.new(id_HI=HI.id, del_before=(ind + 1), del_after=(len(result[ind + 1:])))
+                button = InlineKeyboardButton("К вузу", callback_data=callback)
                 keyboard.add(button)
 
-            await bot.edit_message_reply_markup(
-                chat_id=call.message.chat.id,
-                message_id=call.message.message_id,
-                reply_markup=keyboard,
-            )
+                if ind == len(result) - 1:
+                    callback = city_callback.new(id_city=city.id, del_before=(ind + 1), del_after=0)
+                    button = InlineKeyboardButton("⬅️ К городу", callback_data=callback)
+                    keyboard.add(button)
+                
+                await bot.send_message(call.message.chat.id, general.search_found_HI_mes.format(HI.name, city.name), reply_markup=keyboard, parse_mode="html")
 
-    elif prefix == "go":
-        pass
+                ind += 1
 
-    elif prefix == "back":
-        pass
+
+    elif prefix == "programs":
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+
+        HI = edu_sql.select("HI", f"HI.id == {int(args[0])}", "one")
+
+        result = edu_sql.select("Program", f"Program.id_HI == {int(args[0])}")
+
+        await bot.send_message(call.message.chat.id, general.programs_mes.format(HI.name), parse_mode="html")
+
+        if result == []:
+            callback = program_callback.new(id_HI=HI.id, del_before=1, del_after=0)
+            back_button = InlineKeyboardButton("⬅️ К вузу", callback_data=callback)
+            keyboard = InlineKeyboardMarkup()
+            keyboard.add(back_button)
+
+            await bot.send_message(call.message.chat.id, general.search_programs_not_found_mes, reply_markup=keyboard)
+        else:
+            ind = 0
+            for program in result:
+                program_name = edu_sql.select("ProgramCode", f"ProgramCode.code == '{program.code}'", "one").name
+                HI_name = edu_sql.select("HI", f"HI.id == {program.id_HI}", "one").name
+
+                keyboard = InlineKeyboardMarkup()
+                callback = program_callback.new(id_program=program.id, del_before=(ind + 1), del_after=(len(result[ind + 1:])))
+                button = InlineKeyboardButton("К направлению", callback_data=callback)
+                keyboard.add(button)
+
+                if ind == len(result) - 1:
+                    callback = HI_callback.new(id_HI=program.id_HI, del_before=(ind + 1), del_after=0)
+                    button = InlineKeyboardButton("⬅️ К вузу", callback_data=callback)
+                    keyboard.add(button)
+
+                await bot.send_message(call.message.chat.id, general.search_found_program_mes.format(program_name, HI_name), reply_markup=keyboard, parse_mode="html")
+
+                ind += 1

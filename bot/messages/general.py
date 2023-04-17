@@ -6,6 +6,7 @@ emoji = {
     "compas": "🧭",
     "desc": "🔻",
     "subj": "📍",
+    "back": "⬅️"
 }
 
 # base messages
@@ -24,7 +25,7 @@ help_mes = """
 
 Интерфейс бота позволяет вам находить ВУЗы и направления. Для реализации этих функций бот имеет следующие команды:
 /search_city    Найдет город
-/search_hi      Найдет ВУЗ
+/search_hi      Найдет Вуз
 /search_program Найдет направление
 /types          Найдет все направления
 и др.
@@ -42,13 +43,14 @@ help_mes = """
 # search messages (which are working as dialogs with user)
 search_found_mes = """По вашему запросу нашлось:"""
 search_not_found_mes = """По вашему запросу ничего не найдено :("""
+search_very_long_ans_mes = """Слишком обобщенный запрос.\nПопробуйте сузить круг поиска"""
+
+search_HIs_not_found_mes = """Вузов не найдено :("""
+search_programs_not_found_mes = """Направлений не найдено :("""
 
 search_city_mes = """Хорошо, напишите название города"""
-search_HI_mes = """Хорошо, напишите название ВУЗа"""
+search_HI_mes = """Хорошо, напишите название вуза"""
 search_program_mes = """Хорошо, напишите название направления"""
-
-search_types_0 = f"""<b>{emoji['program']} Направления подготовки{emoji['desc']}</b>"""
-search_types = f"""<b>{emoji['HI']} ВУЗ:</b> {{}}\n<b>{emoji['program']} Направления подготовки{emoji['desc']}</b>"""
 
 search_HIs_mes = f"""{emoji['city']} <b>Город:</b> {{}}\n<b>{emoji['HI']} Университеты{emoji['desc']}</b>"""
 
@@ -59,7 +61,7 @@ search_found_HI_mes = (
     f"""<b>{emoji['HI']} Название:</b> {{}}\n<b>{emoji['city']} Город:</b> {{}}"""
 )
 search_found_program_mes = (
-    f"""<b>{emoji['program']} Название:</b> {{}}\n<b>{emoji['HI']} ВУЗ:</b> {{}}"""
+    f"""<b>{emoji['program']} Название:</b> {{}}\n<b>{emoji['HI']} Вуз:</b> {{}}"""
 )
 
 # answer messages (which are working with db)
@@ -75,7 +77,7 @@ HI_mes = f"""
 {emoji['HI']} <b>Название:</b> {{}}
 {emoji['city']} <b>Город:</b> {{}}
 
-<b>Описание ВУЗа {emoji['desc']}</b>
+<b>Описание Вуза {emoji['desc']}</b>
 {{}}
 """
 
@@ -102,7 +104,15 @@ program_mes = f"""
 *Данные за {{}} год.
 """
 
-HIs_mes = f""""""
+HIs_mes = f"""
+{emoji['city']} <b>Город:</b> {{}}
+<b>Вузы</b>{emoji['desc']}
+"""
+
+programs_mes = f"""
+{emoji['HI']} <b>Вуз:</b> {{}}
+<b>Направления</b>{emoji['desc']}
+"""
 
 # other
 miss_mes = """Простите, не понимаю вас."""
