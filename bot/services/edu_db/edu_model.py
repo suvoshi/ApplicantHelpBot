@@ -43,7 +43,6 @@ class Program(Base):
     budget_places = Column(Integer)
     cost_ed = Column(Integer)
     period = Column(Integer)
-    url = Column(Text)
     last_update = Column(Integer)
     keywords = Column(Text)
 

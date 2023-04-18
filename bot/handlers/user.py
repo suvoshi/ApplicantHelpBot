@@ -8,6 +8,14 @@ from bot.messages import general
 from bot.services.edu_db import edu_sql
 from bot.services.users_db import users_sql
 
+
+def none_check(var):
+    if var is None:
+        return "-"
+    else:
+        return var
+
+
 # set CallbackData for all types
 city_callback = CallbackData("city", "id_city", "del_before", "del_after")
 HI_callback = CallbackData("HI", "id_HI", "del_before", "del_after")
@@ -204,16 +212,12 @@ async def query_cb(call: CallbackQuery):
 
         callback3 = programs_callback.new(id_HI=HI.id)
         callback4 = city_callback.new(id_city=city.id, del_before=0, del_after=0)
-        button1 = InlineKeyboardButton(
-            text="Посмотреть на карте",
-            url="https://www.google.com/maps/place/" + HI.name,
-        )
         button2 = InlineKeyboardButton(text="Сайт", url=HI.url)
         button3 = InlineKeyboardButton(text="Направления", callback_data=callback3)
         button4 = InlineKeyboardButton(text="⬅️ К городу", callback_data=callback4)
 
         keyboard = InlineKeyboardMarkup(row_width=1)
-        keyboard.add(button1, button2, button3, button4)
+        keyboard.add(button2, button3, button4)
 
         await bot.send_message(
             call.message.chat.id,
@@ -239,25 +243,24 @@ async def query_cb(call: CallbackQuery):
 
         callback2 = HI_callback.new(id_HI=program.id_HI, del_before=0, del_after=0)
 
-        button1 = InlineKeyboardButton(text="Подробнее", url=program.url)
-        button2 = InlineKeyboardButton(text="⬅️ К вузу", callback_data=callback2)
+        button1 = InlineKeyboardButton(text="⬅️ К вузу", callback_data=callback2)
 
         keyboard = InlineKeyboardMarkup()
-        keyboard.add(button1, button2)
+        keyboard.add(button1)
 
         await bot.send_message(
             call.message.chat.id,
             general.program_mes.format(
                 program_name,
                 HI_name,
-                program.info,
-                program.profiles,
-                program.objs,
-                program.form,
-                program.budget_places,
-                program.cost_ed,
-                program.period,
-                program.last_update,
+                none_check(program.info),
+                none_check(program.profiles),
+                none_check(program.objs),
+                none_check(program.form),
+                none_check(program.budget_places),
+                none_check(program.cost_ed),
+                none_check(program.period),
+                none_check(program.last_update),
             ),
             parse_mode="html",
             reply_markup=keyboard,
@@ -307,7 +310,7 @@ async def query_cb(call: CallbackQuery):
         await bot.send_message(call.message.chat.id, general.programs_mes.format(HI.name), parse_mode="html")
 
         if result == []:
-            callback = program_callback.new(id_HI=HI.id, del_before=1, del_after=0)
+            callback = HI_callback.new(id_HI=HI.id, del_before=1, del_after=0)
             back_button = InlineKeyboardButton("⬅️ К вузу", callback_data=callback)
             keyboard = InlineKeyboardMarkup()
             keyboard.add(back_button)
