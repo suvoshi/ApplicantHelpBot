@@ -36,7 +36,7 @@ help_mes = """
 # search messages (which are working as dialogs with user)
 search_found_mes = """По вашему запросу нашлось:"""
 search_not_found_mes = """По вашему запросу ничего не найдено :("""
-search_very_long_ans_mes = """Слишком обобщенный запрос.\nПопробуйте сузить круг поиска"""
+search_very_long_ans_mes = """Слишком обобщенный запрос.\nПопробуйте сузить круг поиска."""
 
 search_HIs_not_found_mes = """Вузов не найдено :("""
 search_programs_not_found_mes = """Направлений не найдено :("""
@@ -105,6 +105,16 @@ HIs_mes = f"""
 programs_mes = f"""
 {emoji['HI']} <b>Вуз:</b> {{}}
 <b>Направления</b>{emoji['desc']}
+"""
+
+subtype_mes = f"""
+{emoji['HI']} <b>Вуз:</b> {{}}
+<b>Направления/{{}}/{{}}</b>{emoji['desc']}
+"""
+
+type_mes = f"""
+{emoji['HI']} <b>Вуз:</b> {{}}
+<b>Направления/{{}}</b>{emoji['desc']}
 """
 
 # other

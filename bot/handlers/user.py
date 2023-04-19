@@ -11,9 +11,34 @@ from bot.services.users_db import users_sql
 
 def none_check(var):
     if var is None:
-        return "-"
+        return "<i>информация отсутствует</i>"
     else:
         return var
+
+
+def get_objs(str_objs):
+    features = str_objs.split('objtrack')
+    ans = []
+
+    for feature in features:
+        if "/" in feature:
+            to_ans_name = []
+            to_ans_score = []
+
+            objs = feature.split('/')
+            for obj in objs:
+                obj_id, obj_score = obj.split(":")
+                to_ans_name.append(edu_sql.select("Obj", f"Obj.id == {obj_id}", "one").name)
+                to_ans_score.append(obj_score)
+
+            ans.append(f"{'/'.join(to_ans_name)} - {'/'.join(to_ans_score)}")
+
+        else:
+            obj_id, obj_score = feature.split(":")
+            obj_name = edu_sql.select("Obj", f"Obj.id == {obj_id}", "one").name
+            ans.append(f"{obj_name} - {obj_score}")
+
+    return "\n".join(ans)
 
 
 # set CallbackData for all types
@@ -23,6 +48,9 @@ program_callback = CallbackData("program", "id_program", "del_before", "del_afte
 
 HIs_callback = CallbackData("HIs", "id_city")
 programs_callback = CallbackData("programs", "id_HI")
+
+type_callback = CallbackData("type", "id_type", "id_HI", "del_before")
+subtype_callback = CallbackData("subtype", "id_subtype", "id_HI")
 
 
 @dp.message_handler(commands=["start"])
@@ -142,7 +170,7 @@ async def dialog(message: Message):
                 for program in result:
                     HI_name = edu_sql.select("HI", f"HI.id == {program.id_HI}", "one").name
                     program_name = edu_sql.select(
-                        "ProgramCode", f"ProgramCode.code == {program.code}", "one"
+                        "ProgramCode", f"ProgramCode.code == '{program.code}'", "one"
                     ).name
 
                     callback = program_callback.new(id_program=program.id, del_before=(ind + 1), del_after=(len(result[ind + 1:])))
@@ -255,8 +283,8 @@ async def query_cb(call: CallbackQuery):
                 HI_name,
                 none_check(program.info),
                 none_check(program.profiles),
-                none_check(program.objs),
-                none_check(program.form),
+                get_objs(program.objs),
+                ("Очная" if program.form == 0 else "Заочная"),
                 none_check(program.budget_places),
                 none_check(program.cost_ed),
                 none_check(program.period),
@@ -305,13 +333,62 @@ async def query_cb(call: CallbackQuery):
 
         HI = edu_sql.select("HI", f"HI.id == {int(args[0])}", "one")
 
-        result = edu_sql.select("Program", f"Program.id_HI == {int(args[0])}")
+        types = edu_sql.select("Type", f"Type.id > 0")
 
-        await bot.send_message(call.message.chat.id, general.programs_mes.format(HI.name), parse_mode="html")
+        keyboard = InlineKeyboardMarkup(row_width=1)
+
+        for type in types:
+            callback = type_callback.new(id_type=type.id, id_HI=HI.id, del_before=0)
+            button = InlineKeyboardButton(type.name, callback_data=callback)
+            keyboard.add(button)
+        
+        callback = HI_callback.new(id_HI=HI.id, del_before=0, del_after=0)
+        button = InlineKeyboardButton("⬅️ К вузу", callback_data=callback)
+        keyboard.add(button)
+
+        await bot.send_message(call.message.chat.id, general.programs_mes.format(HI.name), parse_mode="html", reply_markup=keyboard)
+    
+    elif prefix == "type":
+        del_bef = (-1) * int(args[2])
+
+        for i in range(del_bef, 1):
+            await bot.delete_message(chat_id=call.message.chat.id, message_id=(call.message.message_id + i))
+
+        type_name = edu_sql.select("Type", f"Type.id == {int(args[0])}", "one").name
+
+        subtypes = edu_sql.select("Subtype", f"Subtype.id_type == {int(args[0])}")
+
+        HI = edu_sql.select("HI", f"HI.id == {int(args[1])}", "one")
+
+        keyboard = InlineKeyboardMarkup(row_width=1)
+
+        for subtype in subtypes:
+            callback = subtype_callback.new(id_subtype=subtype.id, id_HI=HI.id)
+            button = InlineKeyboardButton(subtype.name, callback_data=callback)
+            keyboard.add(button)
+        
+        callback = programs_callback.new(id_HI=HI.id)
+        button = InlineKeyboardButton("⬅️ Назад", callback_data=callback)
+        keyboard.add(button)
+
+        await bot.send_message(call.message.chat.id, general.type_mes.format(HI.name, type_name), reply_markup=keyboard, parse_mode="html")
+    
+    elif prefix == "subtype":
+        await bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+
+        HI = edu_sql.select("HI", f"HI.id == {int(args[1])}", "one")
+
+        subtype = edu_sql.select("Subtype", f"Subtype.id == {int(args[0])}", "one")
+
+        type = edu_sql.select("Type", f"Type.id == {subtype.id_type}", "one")
+
+        result = edu_sql.select("Program", f"(Program.id_HI == {int(args[1])}) & (Program.id_subtype == {int(args[0])})")
+
+        await bot.send_message(call.message.chat.id, general.subtype_mes.format(HI.name, type.name, subtype.name), parse_mode="html")
 
         if result == []:
-            callback = HI_callback.new(id_HI=HI.id, del_before=1, del_after=0)
-            back_button = InlineKeyboardButton("⬅️ К вузу", callback_data=callback)
+            callback = type_callback.new(id_type=type.id, id_HI=HI.id, del_before=1)
+            back_button = InlineKeyboardButton("⬅️ Назад", callback_data=callback)
             keyboard = InlineKeyboardMarkup()
             keyboard.add(back_button)
 
@@ -320,7 +397,6 @@ async def query_cb(call: CallbackQuery):
             ind = 0
             for program in result:
                 program_name = edu_sql.select("ProgramCode", f"ProgramCode.code == '{program.code}'", "one").name
-                HI_name = edu_sql.select("HI", f"HI.id == {program.id_HI}", "one").name
 
                 keyboard = InlineKeyboardMarkup()
                 callback = program_callback.new(id_program=program.id, del_before=(ind + 1), del_after=(len(result[ind + 1:])))
@@ -328,10 +404,10 @@ async def query_cb(call: CallbackQuery):
                 keyboard.add(button)
 
                 if ind == len(result) - 1:
-                    callback = HI_callback.new(id_HI=program.id_HI, del_before=(ind + 1), del_after=0)
-                    button = InlineKeyboardButton("⬅️ К вузу", callback_data=callback)
+                    callback = type_callback.new(id_type=type.id, id_HI=HI.id, del_before=(ind + 1))
+                    button = InlineKeyboardButton("⬅️ Назад", callback_data=callback)
                     keyboard.add(button)
 
-                await bot.send_message(call.message.chat.id, general.search_found_program_mes.format(program_name, HI_name), reply_markup=keyboard, parse_mode="html")
+                await bot.send_message(call.message.chat.id, general.search_found_program_mes.format(program_name, HI.name), reply_markup=keyboard, parse_mode="html")
 
                 ind += 1
