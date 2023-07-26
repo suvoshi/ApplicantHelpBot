@@ -1,6 +1,10 @@
 # ApplicantHelpBot
 **ApplicantHelpBot** - это бот, который поможет вам в поступлении. Используйте его, чтобы найти информацию о вузах и направлениях подготовки.
 
+## Preview
+
+![Preview](/assets/preview.gif?raw=true "Preview")
+
 ## Функции:
 Что может ApplicantHelpBot?
 
