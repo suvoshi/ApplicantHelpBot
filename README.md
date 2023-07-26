@@ -3,7 +3,7 @@
 
 ## Preview
 
-![Preview](/assets/preview.gif?raw=true "Preview")
+![Preview](/assets/preview.gif)
 
 ## Функции:
 Что может ApplicantHelpBot?
