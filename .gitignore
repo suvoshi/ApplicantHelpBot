@@ -1,0 +1,5 @@
+.env
+data/
+bot/other/
+**/__pycache__/
+TA.md
